@@ -1,2 +1,1 @@
-# CursoGO-Golang
-Curso de Go-Golang
+# Apis de pruebas desarrolladas en Go con Gorilla/mux, Gorm ORM conectando con PostgreSQL
