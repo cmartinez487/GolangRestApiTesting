@@ -6,6 +6,7 @@ import (
 
 	"github.com/cmartinez/GolangRestApiTesting/db"
 	"github.com/cmartinez/GolangRestApiTesting/models"
+	"github.com/gorilla/mux"
 )
 
 func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,30 +20,92 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Get a single user"))
+	var user models.User
+	params := mux.Vars(r)
+
+	db.DB.First(&user, params["id"])
+
+	if user.ID == 0 {
+		w.WriteHeader(http.StatusNotFound) //404 Not Found
+		w.Write([]byte("User not found"))
+		return
+	} else if db.DB.Error != nil {
+		w.WriteHeader(http.StatusBadRequest) //400 Bad Request
+		w.Write([]byte("Error retrieving user: " + db.DB.Error.Error()))
+		return
+	}
+
+	json.NewEncoder(w).Encode(&user)
 }
 
 func PostUserHandler(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	json.NewDecoder(r.Body).Decode(&user)
 
-	//createdUser := db.DB.Create(&user)
-	db.DB.Create(&user)
+	createdUser := db.DB.Create(&user)
+	err := createdUser.Error
 
-	if db.DB.Error != nil {
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest) //400 Bad Request
 		w.Write([]byte("Error creating user: " + db.DB.Error.Error()))
 	}
 	w.WriteHeader(http.StatusCreated)
 
-	//json.NewEncoder(w).Encode(&createdUser)
-	w.Write([]byte("Create a new user: " + user.FirstName + " " + user.LastName + " with email: " + user.Email))
+	json.NewEncoder(w).Encode(&user)
 }
 
 func PutUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Update an existing user"))
+	var user models.User
+	params := mux.Vars(r)
+
+	db.DB.First(&user, params["id"])
+
+	if user.ID == 0 {
+		w.WriteHeader(http.StatusNotFound) //404 Not Found
+		w.Write([]byte("User not found"))
+		return
+	} else if db.DB.Error != nil {
+		w.WriteHeader(http.StatusBadRequest) //400 Bad Request
+		w.Write([]byte("Error retrieving user: " + db.DB.Error.Error()))
+		return
+	}
+
+	var updatedData models.User
+	if err := json.NewDecoder(r.Body).Decode(&updatedData); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid JSON format"))
+		return
+	}
+
+	// Realizar la actualización con GORM
+	if err := db.DB.Model(&user).Updates(updatedData).Error; err != nil {
+		w.WriteHeader(http.StatusInternalServerError) // 500 Internal Server Error
+		w.Write([]byte("Error updating user: " + err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User updated successfully"))
 }
 
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Delete a user"))
+	var user models.User
+	params := mux.Vars(r)
+
+	db.DB.First(&user, params["id"])
+
+	if user.ID == 0 {
+		w.WriteHeader(http.StatusNotFound) //404 Not Found
+		w.Write([]byte("User not found"))
+		return
+	} else if db.DB.Error != nil {
+		w.WriteHeader(http.StatusBadRequest) //400 Bad Request
+		w.Write([]byte("Error retrieving user: " + db.DB.Error.Error()))
+		return
+	}
+
+	//db.DB.Unscoped().Delete(&user) // Use Unscoped to delete the user permanently
+	db.DB.Delete(&user, params["id"])
+
+	w.WriteHeader(http.StatusOK)
 }
