@@ -36,6 +36,8 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	db.DB.Model(&user).Association("Task").Find(&user.Task) // Load associated tasks
+
 	json.NewEncoder(w).Encode(&user)
 }
 
