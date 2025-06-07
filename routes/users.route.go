@@ -15,6 +15,7 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if db.DB.Error != nil {
 		w.WriteHeader(http.StatusBadRequest) //400 Bad Request
 		w.Write([]byte("Error retrieving users: " + db.DB.Error.Error()))
+		return
 	}
 	json.NewEncoder(w).Encode(&users)
 }
@@ -48,6 +49,7 @@ func PostUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest) //400 Bad Request
 		w.Write([]byte("Error creating user: " + db.DB.Error.Error()))
+		return
 	}
 	w.WriteHeader(http.StatusCreated)
 
